@@ -8,23 +8,30 @@ import java.io.IOException;
 
 public class Graph {
     Vertex[] vertices;
-    int[][] edges;
+    List<Edge> edges;
+    int sumVertLevel = 0;
+
     public static final String ANSI_RESET = "\u001B[0m";
     public static final String ANSI_BLACK = "\u001B[30m";
     public static final String ANSI_WHITE_BACKGROUND = "\u001B[47m";
     public static final String ANSI_RED_BACKGROUND = "\u001B[41m";
 
-    Graph(Vertex[] vertices, int[][] edges) {
+    Graph(Vertex[] vertices, List<Edge> edges) {
         this.vertices = vertices;
         this.edges = edges;
     }
 
+    /*
+     *
+     * Create a basic flow network. Only necessary random edges.
+     *
+     * */
     Graph(int number) {
         this.vertices = new Vertex[number];
         for (int i = 0; i < number; i++) {
             vertices[i] = new Vertex(i);
         }
-        this.edges = new int[number][number];
+        this.edges = new ArrayList<>();
         //Empty graph
         List<Vertex> connected = new ArrayList<>();
         connected.add(this.vertices[0]); // source
@@ -35,19 +42,21 @@ public class Graph {
         List<Vertex> outletNotConnected = new ArrayList<>();
         int temp = this.vertices.length - 1;
         outletConnected.add(this.vertices[temp]);
+        //Finding vertices connected to outlet
         while (temp != 0) {
-            for (int i = 0; i < temp; i++) {
-                if (this.edges[i][temp] > 0) {
-                    temp = i;
-                    outletConnected.add(this.vertices[temp]);
+            for (Edge e : this.edges)
+                if (e.second == temp) {
+                    temp = e.first;
+                    outletConnected.add(this.vertices[e.first]);
                     break;
                 }
-            }
         }
         for (Vertex v : this.vertices) {
             if (!outletConnected.contains(v))
                 outletNotConnected.add(v);
         }
+        //Connecting all unConnected vertices to vertices with bigger number.
+        //Protects from cycle and make our graph a flow network.
         Random random = new Random();
         while (!outletNotConnected.isEmpty()) {
             int randFirst = random.nextInt(outletNotConnected.size());
@@ -59,15 +68,44 @@ public class Graph {
             }
             outletConnected.add(first);
             outletNotConnected.remove(randFirst);
-            this.addEdge(first.number, second.number, random.nextInt(9) + 1);
+            this.addEdge(first, second, random.nextInt(9) + 1);
         }
     }
 
-    void addEdge(int x, int y, int flow) {
-        this.edges[x][y] = flow;
+    void addEdge(Vertex x, Vertex y, int flow) {
+        this.edges.add(new Edge(x.number, y.number, flow));
+        x.level += 1;
+        y.level += 1;
+        x.neighbors.add(y.number);
+        this.sumVertLevel += 2;
     }
 
+    void addRandomEdge() {
+        Random random = new Random();
+        int first = random.nextInt(this.vertices.length - 1);
+        int second = random.nextInt(this.vertices.length - 1 - first) + first + 1;
+        if(this.vertices[first].neighbors.contains(second)){
+            //do nothing
+        } else{
+            addEdge(this.vertices[first], this.vertices[second], random.nextInt(9) + 1);
+        }
+    }
+
+    //Print graph as list of edges
     void show() {
+        for (Vertex x : this.vertices) {
+            x.show();
+        }
+        System.out.print("\nLIST\n\n");
+        for (Edge e : this.edges) {
+            e.show();
+        }
+    }
+
+    //Print graph as adjency matrix (not effective but looks better)
+    //Require create big matrix so it's slow
+    void showMatrix() {
+        int[][] edgesMat = this.createMatrix();
         for (Vertex x : this.vertices) {
             x.show();
         }
@@ -87,13 +125,13 @@ public class Graph {
                 System.out.print(" " + i + " ");
             }
             for (int j = 0; j < this.vertices.length; j++) {
-                if (this.edges[i][j] > 0) {
-                    System.out.print(ANSI_WHITE_BACKGROUND + ANSI_BLACK + "| " + this.edges[i][j] + " |" + ANSI_RESET);
+                if (edgesMat[i][j] > 0) {
+                    System.out.print(ANSI_WHITE_BACKGROUND + ANSI_BLACK + "| " + edgesMat[i][j] + " |" + ANSI_RESET);
                 } else {
                     if (i == j) {
-                        System.out.print(ANSI_RED_BACKGROUND + ANSI_BLACK + "| " + this.edges[i][j] + " |" + ANSI_RESET);
+                        System.out.print(ANSI_RED_BACKGROUND + ANSI_BLACK + "| " + edgesMat[i][j] + " |" + ANSI_RESET);
                     } else {
-                        System.out.print("| " + this.edges[i][j] + " |");
+                        System.out.print("| " + edgesMat[i][j] + " |");
                     }
                 }
                 if (j > 9) {
@@ -112,6 +150,26 @@ public class Graph {
         }
     }
 
+    void fill(float number) {
+        if (number > 100) number = 100;
+        //while (this.edges.size() < this.vertices.length * (this.vertices.length - 1) * 0.5 * number / 100) {
+        while(this.sumVertLevel < this.vertices.length * this.vertices.length * number / 100){
+            this.addRandomEdge();
+        }
+    }
+
+    //Function helper for showMatrix()
+    private int[][] createMatrix() {
+        int[][] temp = new int[this.vertices.length][this.vertices.length];
+        for (Edge i : this.edges) {
+            if (i.weight > 0) {
+                temp[i.first][i.second] = i.weight;
+            }
+        }
+        return temp;
+    }
+
+    //Adding random edges to make graph basic connected (not flow network yet)
     private void addSomeEdges(List<Vertex> connected, List<Vertex> unConnected) {
         Random random = new Random();
         while (!unConnected.isEmpty()) {
@@ -124,17 +182,16 @@ public class Graph {
             }
             connected.add(second);
             unConnected.remove(randSecond);
-            this.addEdge(first.number, second.number, random.nextInt(9) + 1);
+            this.addEdge(first, second, random.nextInt(9) + 1);
         }
     }
 
+    //Save graph to file as list of edges
     void save() {
         try {
             FileWriter myWriter = new FileWriter("test.txt");
-            for(int i=0; i<this.vertices.length; i++){
-                for(int j=0; j<this.vertices.length; j++){
-                    myWriter.write(this.edges[i][j] + ",");
-                }
+            for (Edge e : this.edges) {
+                myWriter.write(e.first + " " + e.second + " " + e.weight);
                 myWriter.write("\n");
             }
             myWriter.close();
