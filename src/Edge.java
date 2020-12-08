@@ -9,15 +9,8 @@ public class Edge {
         this.weight = weight;
     }
 
-    public Edge(int first, int second){
-        this.first = first;
-        this.second = second;
-        this.weight = 0;
-    }
-
     void show(){
-        String s = String.format("Edge: %d ---%d---> %d", this.first, this.weight, this.second);
+        String s = String.format("Edge:\t%d\t---%d--->\t%d", this.first, this.weight, this.second);
         System.out.println(s);
     }
-
 }
