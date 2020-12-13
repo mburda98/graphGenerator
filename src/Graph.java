@@ -97,7 +97,7 @@ public class Graph {
         }
         System.out.println("\nVertices number: " + this.vertices.length);
         System.out.println("Edges number: " + this.edges.size());
-        System.out.print("Fill: " + ((double) (this.edges.size()) / this.maxEdges) * 100);
+        System.out.println("Fill: " + ((double) (this.edges.size()) / this.maxEdges) * 100);
     }
 
     void fill(int mode, float number) {
@@ -197,6 +197,7 @@ public class Graph {
                 myWriter.write("\n");
             }
             myWriter.close();
+            System.out.println("Saved.");
         } catch (IOException e) {
             System.out.println("An error occurred while saving graph.");
             e.printStackTrace();
