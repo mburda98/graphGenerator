@@ -189,9 +189,10 @@ public class Graph {
     }
 
     //Save graph to file as list of edges
-    void save() {
+    void save(String fileName) {
         try {
-            FileWriter myWriter = new FileWriter("graph.txt");
+            String s = String.format("C://Users/Maciek/Documents/GitHub/graphGenerator/%s.txt", fileName);
+            FileWriter myWriter = new FileWriter(s);
             for (Edge e : this.edges) {
                 myWriter.write(e.first + " " + e.second + " " + e.weight);
                 myWriter.write("\n");
