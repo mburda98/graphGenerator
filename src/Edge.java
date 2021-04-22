@@ -2,11 +2,13 @@ public class Edge {
     int first;
     int second;
     int weight;
+    int secondWeight;
 
-    public Edge(int first, int second, int weight){
+    public Edge(int first, int second, int weight, int secondWeight){
         this.first = first;
         this.second = second;
         this.weight = weight;
+        this.secondWeight = secondWeight;
     }
 
     void show(){
