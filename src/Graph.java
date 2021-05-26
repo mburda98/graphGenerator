@@ -8,11 +8,12 @@ import java.io.IOException;
 public class Graph {
     Vertex[] vertices;
     List<Edge> edges;
-    int sumVertLevel = 0;
     int maxEdges;
     boolean directed;
     boolean acyclic;
     boolean doubleWeight;
+
+    public static int MAX_WEIGHT = 10;
 
     public static final String ANSI_RESET = "\u001B[0m";
     public static final String ANSI_BLACK = "\u001B[30m";
@@ -24,7 +25,7 @@ public class Graph {
     Graph(int number, boolean directed, boolean acyclic, boolean doubleWeight) {
         this.vertices = new Vertex[number];
         for (int i = 0; i < number; i++) {
-            vertices[i] = new Vertex(i, number, !directed || acyclic);
+            vertices[i] = new Vertex(i, number, acyclic == directed);
         }
         this.maxEdges = (this.vertices.length - 1) * this.vertices.length / 2;
         this.edges = new ArrayList<>();
@@ -46,20 +47,30 @@ public class Graph {
                 // Full graph
                 if (this.directed) this.fullDirectedGraph();
                 else fullUnDirectedGraph();
+                break;
             case 3:
                 // Random connected graph
                 this.connect();
-                if (!this.acyclic) {
+                if (!this.acyclic && this.directed) {
                     while (this.edges.size() < this.maxEdges * number / 100) {
                         this.addRandomEdge();
                     }
                 }
+                break;
             case 4:
                 // Random graph
                 this.acyclic = false;
                 while (this.edges.size() < this.maxEdges * number / 100) {
                     this.addRandomEdge();
                 }
+                break;
+            case 5:
+                // Erdos and Renyi graph
+                this.erdos(number); // Here number is probability of each edge
+                break;
+            case 6:
+                // TESTS
+                this.connect();
             default:
                 break;
         }
@@ -69,14 +80,13 @@ public class Graph {
         List<Vertex> connected = new ArrayList<>();
         connected.add(this.vertices[0]); // source
         List<Vertex> unConnected = new ArrayList<>(Arrays.asList(this.vertices).subList(1, this.vertices.length));
-        this.addSomeEdges(connected, unConnected);
+        this.addSomeEdges(connected, unConnected, false);
     }
 
     // Basic flow network. Only necessary random edges (source -> outlet)
     void basicFlowNetwork() {
         this.connect();
         //Here connected graph and we can go from source to any vertex
-
         List<Vertex> outletConnected = new ArrayList<>();
         List<Vertex> outletNotConnected = new ArrayList<>();
         int temp = this.vertices.length - 1;
@@ -97,19 +107,19 @@ public class Graph {
 
         //Connecting all unConnected vertices to vertices with bigger number.
         //Protects from cycle and make our graph a flow network.
-        addSomeEdges(outletConnected, outletNotConnected);
+        addSomeEdges(outletConnected, outletNotConnected, true);
     }
 
     void fullDirectedGraph() {
         Random random = new Random();
         for (Vertex v : vertices) {
-            for (Vertex w : vertices) {
-                if (v.number != w.number) {
-                    int secondWeight;
-                    if (this.doubleWeight) secondWeight = random.nextInt(9) + 1;
-                    else secondWeight = 0;
-                    this.addDirectedEdge(v, w, random.nextInt(9) + 1, secondWeight);
-                }
+            for (Integer w : v.potential) {
+                int secondWeight;
+                if (this.doubleWeight) secondWeight = random.nextInt(MAX_WEIGHT) + 1;
+                else secondWeight = 0;
+                this.edges.add(new Edge(v.number, w, random.nextInt(MAX_WEIGHT) + 1, secondWeight));
+                v.level += 1;
+                v.neighbors.add(w);
             }
         }
     }
@@ -117,12 +127,33 @@ public class Graph {
     void fullUnDirectedGraph() {
         Random random = new Random();
         for (Vertex v : vertices) {
-            for (Vertex w : vertices) {
-                if (v.number < w.number) {
+            for (Integer w : v.potential) { // Potential not edited, just once iterated
+                int secondWeight;
+                if (this.doubleWeight) secondWeight = random.nextInt(MAX_WEIGHT) + 1;
+                else secondWeight = 0;
+                this.edges.add(new Edge(v.number, w, random.nextInt(MAX_WEIGHT) + 1, secondWeight));
+                v.level += 1;
+                vertices[w].level += 1;
+                v.neighbors.add(w);
+                vertices[w].neighbors.add(v.number);
+            }
+        }
+    }
+
+    void erdos(float prob){ // Undirected graph
+        Random random = new Random();
+        for (int i=0; i < vertices.length; i++){
+            for (int j=i+1; j<vertices.length; j++){
+                // Potential are not used here
+                if(random.nextDouble() * 100 < prob){
                     int secondWeight;
-                    if (this.doubleWeight) secondWeight = random.nextInt(9) + 1;
+                    if (this.doubleWeight) secondWeight = random.nextInt(MAX_WEIGHT) + 1;
                     else secondWeight = 0;
-                    this.addDirectedEdge(v, w, random.nextInt(9) + 1, secondWeight);
+                    this.edges.add(new Edge(i, j, random.nextInt(MAX_WEIGHT) + 1, secondWeight));
+                    vertices[i].level += 1;
+                    vertices[j].level += 1;
+                    vertices[i].neighbors.add(j);
+                    vertices[j].neighbors.add(i);
                 }
             }
         }
@@ -133,7 +164,6 @@ public class Graph {
         x.level += 1;
         x.neighbors.add(y.number);
         x.potential.remove(Integer.valueOf(y.number));
-        this.sumVertLevel += 1;
     }
 
     void addUndirectedEdge(Vertex x, Vertex y, int flow, int secondFlow) {
@@ -144,18 +174,16 @@ public class Graph {
         y.neighbors.add(x.number);
         x.potential.remove(Integer.valueOf(y.number));
         y.potential.remove(Integer.valueOf(x.number));
-        this.sumVertLevel += 2;
     }
 
-    void addDirectedEdgeLast(Vertex x, Vertex y, int flow, int secondFlow) {
+    void addDirectedEdgeFast(Vertex x, Vertex y, int flow, int secondFlow) {
         this.edges.add(new Edge(x.number, y.number, flow, secondFlow));
         x.level += 1;
         x.neighbors.add(y.number);
         x.potential.remove(x.potential.size() - 1);
-        this.sumVertLevel += 1;
     }
 
-    void addUndirectedEdgeLast(Vertex x, Vertex y, int flow, int secondFlow) {
+    void addUndirectedEdgeFast(Vertex x, Vertex y, int flow, int secondFlow) {
         this.edges.add(new Edge(x.number, y.number, flow, secondFlow));
         x.level += 1;
         y.level += 1;
@@ -163,23 +191,23 @@ public class Graph {
         y.neighbors.add(x.number);
         x.potential.remove(x.potential.size() - 1);
         y.potential.remove(y.potential.size() - 1);
-        this.sumVertLevel += 2;
     }
 
     void addRandomEdge() {
         Random random = new Random();
         int first = random.nextInt(this.vertices.length - 1);
-        while (this.vertices[first].potential.size() < 1) {
+        while (this.vertices[first].potential.size() < 1) { // protecting from full vertex
             first = random.nextInt(this.vertices.length - 1);
         }
         //int second = this.vertices[first].potential.get(random.nextInt(this.vertices[first].potential.size()));
         int second = this.vertices[first].potential.get(this.vertices[first].potential.size() - 1);
 
         int secondWeight = 0;
-        if (this.doubleWeight) secondWeight = random.nextInt(9) + 1;
+        if (this.doubleWeight) secondWeight = random.nextInt(MAX_WEIGHT) + 1;
         if (this.directed)
-            addDirectedEdgeLast(this.vertices[first], this.vertices[second], random.nextInt(9) + 1, secondWeight);
-        else addUndirectedEdgeLast(this.vertices[first], this.vertices[second], random.nextInt(9) + 1, secondWeight);
+            addDirectedEdgeFast(this.vertices[first], this.vertices[second], random.nextInt(MAX_WEIGHT) + 1, secondWeight);
+        else
+            addUndirectedEdgeFast(this.vertices[first], this.vertices[second], random.nextInt(MAX_WEIGHT) + 1, secondWeight);
     }
 
     //Print graph as list of edges
@@ -198,23 +226,28 @@ public class Graph {
     }
 
     //Adding random edges to make graph basic connected (not flow network yet)
-    private void addSomeEdges(List<Vertex> connected, List<Vertex> unConnected) {
+    private void addSomeEdges(List<Vertex> connected, List<Vertex> unConnected, boolean reverse) {
         Random random = new Random();
         while (!unConnected.isEmpty()) {
             int randFirst = random.nextInt(connected.size());
             int randSecond = random.nextInt(unConnected.size());
             Vertex first = connected.get(randFirst);
             Vertex second = unConnected.get(randSecond);
+            if (reverse) {
+                Vertex temp = first;
+                first = second;
+                second = temp;
+            }
             if (first.number >= second.number) { //TODO must be better way
                 continue;
             }
             connected.add(second);
             unConnected.remove(randSecond);
             int secondWeight;
-            if (this.doubleWeight) secondWeight = random.nextInt(9) + 1;
+            if (this.doubleWeight) secondWeight = random.nextInt(MAX_WEIGHT) + 1;
             else secondWeight = 0;
-            if (this.directed) this.addDirectedEdge(first, second, random.nextInt(9) + 1, secondWeight);
-            else this.addUndirectedEdge(first, second, random.nextInt(9) + 1, secondWeight);
+            if (this.directed) this.addDirectedEdge(first, second, random.nextInt(MAX_WEIGHT) + 1, secondWeight);
+            else this.addUndirectedEdge(first, second, random.nextInt(MAX_WEIGHT) + 1, secondWeight);
         }
     }
 
@@ -283,7 +316,7 @@ public class Graph {
             String s = String.format("C://Users/Maciek/Documents/GitHub/graphGenerator/%s.txt", fileName);
             FileWriter myWriter = new FileWriter(s);
             for (Edge e : this.edges) {
-                if (!this.doubleWeight) myWriter.write(e.first + " " + e.second + " " + e.weight);
+                if (!this.doubleWeight) myWriter.write(e.first + " " + e.second);// + " " + e.weight);
                 else myWriter.write(e.first + " " + e.second + " " + e.weight + " " + e.secondWeight);
                 myWriter.write("\n");
             }

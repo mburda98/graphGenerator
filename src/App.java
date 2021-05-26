@@ -23,7 +23,7 @@ public class App {
         JRadioButton percentage = new JRadioButton("Percentage filling");
         ButtonGroup mode = new ButtonGroup();
         mode.add(percentage);
-        JRadioButton edges = new JRadioButton("Nr edges");
+        JRadioButton edges = new JRadioButton("Average vertex level");
         mode.add(edges);
         f.add(percentage);
         f.add(edges);
@@ -93,12 +93,12 @@ public class App {
                     return;
                 }*/
                 //Creating graph and filling
-                Graph g = new Graph(vertNum, true, true, true);
+                Graph g = new Graph(vertNum, false, true, false);
                 //g.showMatrix();
                 long inTime = System.currentTimeMillis() - startTime;
                 System.out.println(inTime);
-                g.fill(1, fillLevel);
-                //g.showMatrix();
+                g.fill(5, fillLevel);
+                g.showMatrix();
                 g.save(file);
                 long endTime = System.currentTimeMillis() - startTime;
                 System.out.println(endTime);
