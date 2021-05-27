@@ -51,7 +51,7 @@ public class Graph {
             case 3:
                 // Random connected graph
                 this.connect();
-                if (!this.acyclic && this.directed) {
+                if (!this.acyclic || this.directed) {
                     while (this.edges.size() < this.maxEdges * number / 100) {
                         this.addRandomEdge();
                     }
@@ -69,8 +69,8 @@ public class Graph {
                 this.erdos(number); // Here number is probability of each edge
                 break;
             case 6:
-                // TESTS
                 this.connect();
+                break;
             default:
                 break;
         }
@@ -190,7 +190,7 @@ public class Graph {
         x.neighbors.add(y.number);
         y.neighbors.add(x.number);
         x.potential.remove(x.potential.size() - 1);
-        y.potential.remove(y.potential.size() - 1);
+        if(directed && acyclic) y.potential.remove(y.potential.size() - 1);
     }
 
     void addRandomEdge() {
@@ -313,10 +313,10 @@ public class Graph {
     //Save graph to file as list of edges
     void save(String fileName) {
         try {
-            String s = String.format("C://Users/Maciek/Documents/GitHub/graphGenerator/%s.txt", fileName);
-            FileWriter myWriter = new FileWriter(s);
+            System.out.println(fileName);
+            FileWriter myWriter = new FileWriter(fileName);
             for (Edge e : this.edges) {
-                if (!this.doubleWeight) myWriter.write(e.first + " " + e.second);// + " " + e.weight);
+                if (!this.doubleWeight) myWriter.write(e.first + " " + e.second + " " + e.weight);
                 else myWriter.write(e.first + " " + e.second + " " + e.weight + " " + e.secondWeight);
                 myWriter.write("\n");
             }

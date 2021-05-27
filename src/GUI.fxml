@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.String?>
+<?import javafx.collections.FXCollections?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.Pane?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" nodeOrientation="LEFT_TO_RIGHT" prefHeight="521.0" prefWidth="354.0" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="App">
+      <Button fx:id="graph" layoutX="117.0" layoutY="471.0" mnemonicParsing="false" onAction="#graph" text="Generuj graf" />
+      <ComboBox fx:id="type" layoutX="67.0" layoutY="52.0" prefWidth="150.0">
+              <items>
+                 <FXCollections fx:factory="observableArrayList">
+                    <String fx:value="Sieć przepływowa" />
+                    <String fx:value="Drzewa" />
+                    <String fx:value="Grafy pełne" />
+                     <String fx:value="Grafy spójne losowe" />
+                     <String fx:value="Grafy losowe" />
+                     <String fx:value="Grafy Erdosa-Renyi'ego" />
+                 </FXCollections>
+              </items>
+      </ComboBox>
+      <Label layoutX="117.0" layoutY="27.0" text="Typ grafu" />
+      <Label layoutX="88.0" layoutY="90.0" text="Liczba wierzchołków" />
+      <TextField fx:id="nrVert" layoutX="67.0" layoutY="107.0" />
+      <Label layoutX="18.0" layoutY="145.0" text="Poziom wypełnienia lub prawdopodobieństwo" />
+      <TextField fx:id="fill_prob" layoutX="66.0" layoutY="162.0" />
+      <RadioButton fx:id="directed" layoutX="25.0" layoutY="231.0" mnemonicParsing="false" selected="true" text="Skierowany">
+         <toggleGroup>
+            <ToggleGroup fx:id="kierunkowosc" />
+         </toggleGroup>
+      </RadioButton>
+      <RadioButton fx:id="undirected" layoutX="146.0" layoutY="231.0" mnemonicParsing="false" text="Nieskierowany" toggleGroup="$kierunkowosc" />
+      <RadioButton fx:id="acyclic" layoutX="27.0" layoutY="280.0" mnemonicParsing="false" selected="true" text="Acykliczny">
+         <toggleGroup>
+            <ToggleGroup fx:id="acyklicznosc" />
+         </toggleGroup>
+      </RadioButton>
+      <RadioButton fx:id="cyclic" layoutX="142.0" layoutY="280.0" mnemonicParsing="false" text="Cykle dopuszczone" toggleGroup="$acyklicznosc" />
+      <CheckBox fx:id="doubleWeight" layoutX="25.0" layoutY="327.0" mnemonicParsing="false" text="Podwójne wagi" />
+      <Button fx:id="fcButton" layoutX="25.0" layoutY="375.0" mnemonicParsing="false" onAction="#fileChooser" text="Wybierz miejsce zapisu" />
+      <Label fx:id="file" layoutX="27.0" layoutY="434.0" />
+</Pane>
