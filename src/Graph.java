@@ -238,7 +238,7 @@ public class Graph {
                 first = second;
                 second = temp;
             }
-            if (first.number >= second.number) { //TODO must be better way
+            if (first.number >= second.number) {
                 continue;
             }
             connected.add(second);
@@ -315,6 +315,7 @@ public class Graph {
         try {
             System.out.println(fileName);
             FileWriter myWriter = new FileWriter(fileName);
+            myWriter.write(this.vertices.length + " " + this.edges.size() + "\n");
             for (Edge e : this.edges) {
                 if (!this.doubleWeight) myWriter.write(e.first + " " + e.second + " " + e.weight);
                 else myWriter.write(e.first + " " + e.second + " " + e.weight + " " + e.secondWeight);
